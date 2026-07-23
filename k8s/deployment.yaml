@@ -1,0 +1,51 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: banorte-ai-assistant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: banorte-ai-assistant
+  template:
+    metadata:
+      labels:
+        app: banorte-ai-assistant
+    spec:
+      containers:
+        - name: banorte-ai-assistant
+          image: banorte-ai-assistant:1.5.0
+          imagePullPolicy: Never
+
+          ports:
+            - containerPort: 8000
+
+          envFrom:
+            - secretRef:
+                name: banorte-ai-secrets
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

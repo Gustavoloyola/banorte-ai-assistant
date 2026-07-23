@@ -1,0 +1,45 @@
+﻿name: CI Banorte AI Assistant
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Ejecutar pruebas
+        env:
+          GOOGLE_GENAI_USE_VERTEXAI: "FALSE"
+          GOOGLE_API_KEY: "test-key-not-used"
+        run: |
+          python -m pytest -v
+
+      - name: Validar sintaxis
+        run: |
+          python -m py_compile app/main.py
+          python -m py_compile app/agent_service.py
+          python -m py_compile banorte_agent/agent.py
+          python -m py_compile mcp_server/server.py
+
+      - name: Construir imagen Docker
+        run: |
+          docker build -t banorte-ai-assistant:${{ github.sha }} .
