@@ -1,7 +1,7 @@
 ﻿import { useState } from "react";
 import "./App.css";
 
-const API_BASE_URL = "http://127.0.0.1:8001";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function App() {
   const [clienteId, setClienteId] = useState("CLI-5005");
@@ -454,3 +454,4 @@ function App() {
 }
 
 export default App;
+

@@ -10,6 +10,6 @@ COPY app ./app
 COPY banorte_agent ./banorte_agent
 COPY mcp_server ./mcp_server
 
-EXPOSE 8000
+ENV PORT=8080
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]

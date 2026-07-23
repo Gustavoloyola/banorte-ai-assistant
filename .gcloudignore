@@ -1,0 +1,11 @@
+﻿.git
+.github
+.env
+.venv
+.vscode
+__pycache__
+*.pyc
+.pytest_cache
+frontend/node_modules
+frontend/dist
+banorte-ai-assistant.tar

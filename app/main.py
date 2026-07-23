@@ -81,6 +81,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "https://banorte-ai-frontend-jtsvleeiga-pv.a.run.app",
+        "https://banorte-ai-frontend-782197536750.northamerica-south1.run.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -193,6 +195,10 @@ async def agent_chat(request: AgentChatRequest) -> AgentChatResponse:
             status_code=500,
             detail="Ocurrió un error al ejecutar el agente.",
         ) from exc
+
+
+
+
 
 
 

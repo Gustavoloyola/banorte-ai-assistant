@@ -1,0 +1,13 @@
+﻿steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - Dockerfile.frontend
+      - --build-arg
+      - VITE_API_BASE_URL=https://banorte-ai-backend-782197536750.northamerica-south1.run.app
+      - -t
+      - northamerica-south1-docker.pkg.dev/banorte-ai-assistant/banorte-ai/frontend:1.0.1
+      - .
+images:
+  - northamerica-south1-docker.pkg.dev/banorte-ai-assistant/banorte-ai/frontend:1.0.1
