@@ -1,0 +1,120 @@
+﻿name: Deploy Cloud Run
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PROJECT_ID: banorte-ai-assistant
+  REGION: northamerica-south1
+  REPOSITORY: banorte-ai
+  BACKEND_SERVICE: banorte-ai-backend
+  FRONTEND_SERVICE: banorte-ai-frontend
+  RUNTIME_SERVICE_ACCOUNT: banorte-ai-runner@banorte-ai-assistant.iam.gserviceaccount.com
+  BACKEND_URL: https://banorte-ai-backend-782197536750.northamerica-south1.run.app
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Configure gcloud
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Define images
+        run: |
+          echo "BACKEND_IMAGE=${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "FRONTEND_IMAGE=${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:${GITHUB_SHA}" >> "$GITHUB_ENV"
+
+      - name: Build backend
+        run: |
+          gcloud builds submit \
+            --project="${PROJECT_ID}" \
+            --region="${REGION}" \
+            --tag="${BACKEND_IMAGE}" \
+            .
+
+      - name: Deploy backend
+        run: |
+          gcloud run deploy "${BACKEND_SERVICE}" \
+            --project="${PROJECT_ID}" \
+            --region="${REGION}" \
+            --image="${BACKEND_IMAGE}" \
+            --service-account="${RUNTIME_SERVICE_ACCOUNT}" \
+            --port=8080 \
+            --memory=1Gi \
+            --cpu=1 \
+            --min-instances=0 \
+            --max-instances=2 \
+            --set-env-vars=GOOGLE_GENAI_USE_VERTEXAI=FALSE \
+            --set-secrets=GOOGLE_API_KEY=google-api-key:latest \
+            --quiet
+
+      - name: Verify backend
+        run: |
+          curl --fail --retry 6 --retry-delay 5 "${BACKEND_URL}/health"
+
+      - name: Create frontend build config
+        run: |
+          cat > cloudbuild.frontend.actions.yaml <<EOF
+          steps:
+            - name: gcr.io/cloud-builders/docker
+              args:
+                - build
+                - -f
+                - Dockerfile.frontend
+                - --build-arg
+                - VITE_API_BASE_URL=${BACKEND_URL}
+                - -t
+                - ${FRONTEND_IMAGE}
+                - .
+          images:
+            - ${FRONTEND_IMAGE}
+          EOF
+
+      - name: Build frontend
+        run: |
+          gcloud builds submit \
+            --project="${PROJECT_ID}" \
+            --region="${REGION}" \
+            --config=cloudbuild.frontend.actions.yaml \
+            .
+
+      - name: Deploy frontend
+        run: |
+          gcloud run deploy "${FRONTEND_SERVICE}" \
+            --project="${PROJECT_ID}" \
+            --region="${REGION}" \
+            --image="${FRONTEND_IMAGE}" \
+            --port=8080 \
+            --memory=512Mi \
+            --cpu=1 \
+            --min-instances=0 \
+            --max-instances=2 \
+            --quiet
+
+      - name: Show URLs
+        run: |
+          gcloud run services describe "${BACKEND_SERVICE}" \
+            --project="${PROJECT_ID}" \
+            --region="${REGION}" \
+            --format="value(status.url)"
+
+          gcloud run services describe "${FRONTEND_SERVICE}" \
+            --project="${PROJECT_ID}" \
+            --region="${REGION}" \
+            --format="value(status.url)"
