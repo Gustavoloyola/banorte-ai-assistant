@@ -68,6 +68,7 @@ async def execute_agent(
             ]
 
             if response_parts:
-                final_response = "`n".join(response_parts)
+                final_response = "\n".join(response_parts)
 
     return current_session_id, final_response
+

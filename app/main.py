@@ -4,6 +4,7 @@ import time
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Response
+from fastapi.middleware.cors import CORSMiddleware
 from opentelemetry import trace
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from prometheus_client import (
@@ -74,6 +75,17 @@ app = FastAPI(
     version="1.5.0",
 )
 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 FastAPIInstrumentor.instrument_app(app)
 
 
@@ -181,3 +193,6 @@ async def agent_chat(request: AgentChatRequest) -> AgentChatResponse:
             status_code=500,
             detail="Ocurrió un error al ejecutar el agente.",
         ) from exc
+
+
+
