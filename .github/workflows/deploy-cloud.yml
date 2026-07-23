@@ -1,6 +1,9 @@
 ﻿name: Deploy Cloud Run
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -118,3 +121,4 @@ jobs:
             --project="${PROJECT_ID}" \
             --region="${REGION}" \
             --format="value(status.url)"
+
